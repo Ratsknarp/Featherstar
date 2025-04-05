@@ -63,7 +63,7 @@ enum Preferences {
 	/// Preferred language
 	static var preferredLanguageCode: String?
 	
-	@Storage(key: "Feather.Beta", defaultValue: false)
+	@Storage(key: "Feather.Beta", defaultValue: true)
 	//
 	static var beta: Bool
 	
