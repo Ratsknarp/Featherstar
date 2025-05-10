@@ -1,4 +1,4 @@
-name: Autosync and Build
+name: Sync n' Build
 
 on:
   schedule:
