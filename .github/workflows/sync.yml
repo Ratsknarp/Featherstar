@@ -1,4 +1,4 @@
-name: Sync with Upstream (Favor Upstream)
+name: Autosync
 
 on:
   schedule:
