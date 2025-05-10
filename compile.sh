@@ -52,5 +52,5 @@ for scheme in "${schemes[@]}"; do
     
     mkdir -p packages
 
-    zip -r9 "packages/$scheme-$platform.ipa" Payload
+    zip -r9 "packages/$scheme.ipa" Payload
 done
