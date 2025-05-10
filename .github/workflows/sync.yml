@@ -1,0 +1,40 @@
+name: Sync with Upstream
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"  # Every 5 minutes
+  workflow_dispatch:  # Allow manual trigger
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write  # Allow pushing changes to the repository
+
+    steps:
+      - name: Checkout fork
+        uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          ref: main  # Replace with your branch if not `main`
+
+      - name: Set up Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Add upstream remote
+        run: |
+          git remote add upstream https://github.com/khcrysalis/Feather.git
+
+      - name: Fetch upstream changes
+        run: |
+          git fetch upstream main  # Replace `main` with the correct upstream branch name
+
+      - name: Merge upstream changes into fork
+        run: |
+          git merge upstream/main -X theirs --allow-unrelated-histories || echo "Sync completed with conflicts resolved"
+
+      - name: Push changes to fork
+        run: |
+          git push origin main --force  # Push changes back to your fork

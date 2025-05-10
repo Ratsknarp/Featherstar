@@ -1,0 +1,112 @@
+name: Build AltStore Repo
+
+on:
+  workflow_run:
+    workflows:
+      - "Build and Release Feather (idevice)"
+      - "Build and Release Feather v2"
+    types:
+      - completed  
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Enter the version manually (or fallback to latest if invalid)'
+        required: true 
+        default: 'manual'
+
+jobs:
+  generate-altstore-repo:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Fetch release assets
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mkdir -p public
+          VERSION="${{ github.event.release.tag_name || github.event.inputs.version || 'manual' }}"
+
+          # Fetch release metadata
+          RELEASE_METADATA=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
+            "https://api.github.com/repos/${{ github.repository }}/releases/tags/${VERSION}")
+
+          # Check if the release exists; fall back to latest release if it doesn't
+          if echo "$RELEASE_METADATA" | jq -e '.id' > /dev/null 2>&1; then
+            RELEASE_ID=$(echo "$RELEASE_METADATA" | jq -r '.id')
+          else
+            echo "No release found for tag: $VERSION. Falling back to the latest release."
+            RELEASE_METADATA=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
+              "https://api.github.com/repos/${{ github.repository }}/releases/latest")
+            RELEASE_ID=$(echo "$RELEASE_METADATA" | jq -r '.id')
+          fi
+
+          echo "Using release ID: $RELEASE_ID"
+
+          # Download all .ipa files from the release
+          ASSETS=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
+            "https://api.github.com/repos/${{ github.repository }}/releases/$RELEASE_ID/assets" | jq -c '.[] | select(.name | endswith(".ipa"))')
+
+          echo "$ASSETS" | while read -r asset; do
+            NAME=$(echo "$asset" | jq -r '.name')
+            DOWNLOAD_URL=$(echo "$asset" | jq -r '.url')
+
+            # Download the asset using GitHub API
+            curl -L -H "Authorization: token $GITHUB_TOKEN" \
+                 -H "Accept: application/octet-stream" \
+                 "$DOWNLOAD_URL" -o "public/$NAME"
+          done
+
+      - name: Generate apps.json
+        run: |
+          DATE="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+          VERSION="${{ github.event.release.tag_name || github.event.inputs.version || 'manual' }}"
+          ASSETS_URL="https://github.com/${{ github.repository }}/releases/download/${VERSION}"
+
+          echo '{
+            "name": "Feather v2 Alpha Test",
+            "identifier": "pidev.feather.testing",
+            "iconURL": "https://ratsknarp.github.io/featherstar/featheralpha.png",
+            "apps": [' > public/apps.json
+
+          # Add Feather (idevice) app entry
+          echo '{
+              "name": "Feather (idevice)",
+              "bundleIdentifier": "thewonderofyou.Feather",
+              "developerName": "Samara",
+              "version": "'"$VERSION"'",
+              "versionDate": "'"$DATE"'",
+              "downloadURL": "https://ratsknarp.github.io/featherstar/Feather-idevice.ipa",
+              "iconURL": "https://ratsknarp.github.io/featherstar/featherpurp.png",
+              "localizedDescription": "Test build of Feather with jkcoxsons idevice (REQUIRES PAIRING FILE AND LOOPBACK VPN).",
+              "subtitle": "Feather (idevice)",
+              "tintColor": "0033cc",
+              "size": 0
+            },' >> public/apps.json
+
+          # Add Feather v2 app entry
+          echo '{
+              "name": "Feather v2",
+              "bundleIdentifier": "thewonderofyou.Feather",
+              "developerName": "Samara",
+              "version": "'"$VERSION"'",
+              "versionDate": "'"$DATE"'",
+              "downloadURL": "https://ratsknarp.github.io/featherstar/Feather-v2.ipa",
+              "iconURL": "https://ratsknarp.github.io/featherstar/feather.png",
+              "localizedDescription": "Test build of more familiar version of Feather with vapor webserver.",
+              "subtitle": "Feather v2",
+              "tintColor": "0099ff",
+              "size": 0
+            }
+          ]}' >> public/apps.json
+
+      - name: Deploy to gh-pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./public
+          publish_branch: gh-pages
