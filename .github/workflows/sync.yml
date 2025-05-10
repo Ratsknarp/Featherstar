@@ -84,7 +84,7 @@ jobs:
             -project Feather.xcodeproj \
             -scheme "Feather-idevice" \
             -configuration Release \
-            -archivePath build/Feather-idevice.xcarchive \
+            -archivePath build/Featheridevice.xcarchive \
             -sdk iphoneos \
             -destination 'generic/platform=iOS' \
             ONLY_ACTIVE_ARCH=YES \
@@ -99,7 +99,7 @@ jobs:
       - name: Create unsigned IPA
         run: |
           mkdir -p build/Payload
-          APP_PATH="build/FeatherIdevice.xcarchive/Products/Applications/Feather-idevice.app"
+          APP_PATH="build/Featheridevice.xcarchive/Products/Applications/Feather-idevice.app"
           if [ ! -d "$APP_PATH" ]; then
             echo "App not found at expected path: $APP_PATH"
             exit 1
