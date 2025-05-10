@@ -1,0 +1,40 @@
+name: Sync with Upstream (Favor Upstream)
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout your repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GH_PAT }}
+          fetch-depth: 0
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+
+      - name: Add upstream and fetch
+        run: |
+          git remote add upstream https://github.com/khcrysalis/Feather.git
+          git fetch upstream
+
+      - name: Merge upstream changes (favor theirs)
+        run: |
+          git merge upstream/main --allow-unrelated-histories --no-edit || true
+          if [ -n "$(git ls-files -u)" ]; then
+            echo "Conflicts detected. Favoring upstream changes..."
+            git checkout --theirs .
+            git add .
+            git commit -m "Merge upstream (auto-resolved with theirs)"
+          fi
+
+      - name: Push to origin
+        run: |
+          git push origin main
