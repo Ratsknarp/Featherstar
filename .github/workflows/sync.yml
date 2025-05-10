@@ -55,73 +55,14 @@ jobs:
             echo "changes=true" >> "$GITHUB_OUTPUT"
           fi
 
-  build-feather-idevice:
-    needs: sync-with-upstream
-    if: needs.sync-with-upstream.outputs.changes-detected == 'true'
-    runs-on: macos-latest
-    continue-on-error: true 
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v3
-        with:
-          submodules: recursive
-
-      - name: Setup Xcode
-        uses: maxim-lobanov/setup-xcode@v1
-        with:
-          xcode-version: 'latest'
-
-      - name: Generate release metadata
-        id: meta
-        run: |
-          SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
-          echo "TAG=featherrelease-${SHORT_SHA}" >> "$GITHUB_ENV"
-          echo "RELEASE_NAME=Feather Rewrite Test Release $SHORT_SHA" >> "$GITHUB_ENV"
-
-      - name: Archive Build (Unsigned)
-        run: |
-          xcodebuild clean archive \
-            -project Feather.xcodeproj \
-            -scheme "Feather-idevice" \
-            -configuration Release \
-            -archivePath build/Featheridevice.xcarchive \
-            -sdk iphoneos \
-            -destination 'generic/platform=iOS' \
-            ONLY_ACTIVE_ARCH=YES \
-            ARCHS=arm64 \
-            CODE_SIGN_IDENTITY="" \
-            CODE_SIGNING_REQUIRED=NO \
-            CODE_SIGNING_ALLOWED=NO \
-            SWIFT_OPTIMIZATION_LEVEL="-Owholemodule" \
-            IPHONEOS_DEPLOYMENT_TARGET=17.4 \
-            -skipPackagePluginValidation
-
-      - name: Create unsigned IPA
-        run: |
-          mkdir -p build/Payload
-          APP_PATH="build/Featheridevice.xcarchive/Products/Applications/Feather-idevice.app"
-          if [ ! -d "$APP_PATH" ]; then
-            echo "App not found at expected path: $APP_PATH"
-            exit 1
-          fi
-          cp -R "$APP_PATH" build/Payload/
-          cd build
-          zip -r Feather-idevice.ipa Payload
-
-      - name: Upload IPA (Create or Update Release)
-        uses: softprops/action-gh-release@v1
-        with:
-          tag_name: ${{ env.TAG }}
-          name: ${{ env.RELEASE_NAME }}
-          files: build/Feather-idevice.ipa
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
   build-feather:
     needs: sync-with-upstream
-    if: needs.sync-with-upstream.outputs.changes-detected == 'true'
+    if: |
+      github.event_name == 'workflow_dispatch' || needs.sync-with-upstream.outputs.changes-detected == 'true'
     runs-on: macos-latest
-    continue-on-error: true 
+    strategy:
+      matrix:
+        scheme: [Feather, Feather-idevice]
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
@@ -133,20 +74,28 @@ jobs:
         with:
           xcode-version: 'latest'
 
-      - name: Generate release metadata
+      - name: Set metadata for matrix
         id: meta
         run: |
           SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
           echo "TAG=featherrelease-${SHORT_SHA}" >> "$GITHUB_ENV"
           echo "RELEASE_NAME=Feather Rewrite Test Release $SHORT_SHA" >> "$GITHUB_ENV"
+          
+          if [[ "${{ matrix.scheme }}" == "Feather" ]]; then
+            echo "ARCHIVE_NAME=Feather" >> "$GITHUB_ENV"
+            echo "OUTPUT_NAME=Feather-v2.ipa" >> "$GITHUB_ENV"
+          else
+            echo "ARCHIVE_NAME=Featheridevice" >> "$GITHUB_ENV"
+            echo "OUTPUT_NAME=Feather-idevice.ipa" >> "$GITHUB_ENV"
+          fi
 
       - name: Archive Build (Unsigned)
         run: |
           xcodebuild clean archive \
             -project Feather.xcodeproj \
-            -scheme "Feather" \
+            -scheme "${{ matrix.scheme }}" \
             -configuration Release \
-            -archivePath build/Feather.xcarchive \
+            -archivePath build/${{ env.ARCHIVE_NAME }}.xcarchive \
             -sdk iphoneos \
             -destination 'generic/platform=iOS' \
             ONLY_ACTIVE_ARCH=YES \
@@ -161,30 +110,27 @@ jobs:
       - name: Create unsigned IPA
         run: |
           mkdir -p build/Payload
-          APP_PATH="build/Feather.xcarchive/Products/Applications/Feather.app"
+          APP_PATH="build/${{ env.ARCHIVE_NAME }}.xcarchive/Products/Applications/${{ matrix.scheme }}.app"
           if [ ! -d "$APP_PATH" ]; then
             echo "App not found at expected path: $APP_PATH"
             exit 1
           fi
           cp -R "$APP_PATH" build/Payload/
           cd build
-          zip -r Feather-v2.ipa Payload
+          zip -r "${{ env.OUTPUT_NAME }}" Payload
 
       - name: Upload IPA (Create or Update Release)
         uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ env.TAG }}
           name: ${{ env.RELEASE_NAME }}
-          files: build/Feather-v2.ipa
+          files: build/${{ env.OUTPUT_NAME }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   generate-altstore-repo:
-    needs: [build-feather, build-feather-idevice]
-    if: |
-      always() &&
-      needs.build-feather.result != 'skipped' &&
-      needs.build-feather-idevice.result != 'skipped'
+    needs: build-feather
+    if: always()
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -226,8 +172,6 @@ jobs:
         run: |
           DATE="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
           VERSION="${{ github.event.release.tag_name || github.event.inputs.version || 'manual' }}"
-          ASSETS_URL="https://github.com/${{ github.repository }}/releases/download/${VERSION}"
-
           echo '{
             "name": "Feather v2 Alpha Test",
             "identifier": "pidev.feather.testing",
