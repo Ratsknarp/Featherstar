@@ -3,6 +3,7 @@ name: Sync with Upstream (Favor Upstream)
 on:
   schedule:
     - cron: "*/15 * * * *"
+  workflow_dispatch:  
 
 jobs:
   sync:
@@ -22,7 +23,7 @@ jobs:
 
       - name: Add upstream and fetch
         run: |
-          git remote add upstream https://github.com/khcrysalis/Feather.git
+          git remote add upstream https://github.com/UPSTREAM_OWNER/UPSTREAM_REPO.git
           git fetch upstream
 
       - name: Merge upstream changes (favor theirs)
