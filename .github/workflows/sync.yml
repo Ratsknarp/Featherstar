@@ -1,4 +1,4 @@
-name: Sync and Build Feather
+name: Autosync and Build
 
 on:
   schedule:
