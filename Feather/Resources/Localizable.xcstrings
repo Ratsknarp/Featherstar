@@ -55,6 +55,29 @@
         }
       }
     },
+    "%lld Days" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld Day"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "new",
+                  "value" : "%lld Days"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "%lld required system dylibs not shown" : {
       "comment" : "Number of macho load paths not listed for safety",
       "localizations" : {
@@ -983,6 +1006,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Existing Dylibs"
+          }
+        }
+      }
+    },
+    "Expired" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Expired"
           }
         }
       }
