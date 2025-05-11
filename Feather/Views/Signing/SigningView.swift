@@ -164,21 +164,21 @@ extension SigningView {
 		}
 	}
 	
-	@ViewBuilder
-	private func _cert() -> some View {
-		NBSection(.localized("Signing")) {
-			if let cert = _selectedCert() {
-				NavigationLink {
-					CertificatesView(selectedCert: $_temporaryCertificate)
-				} label: {
-					CertificatesCellView(
-						cert: cert,
-						shouldDisplayInfo: false,
-					)
-				}
+@ViewBuilder
+private func _cert() -> some View {
+	NBSection(.localized("Signing")) {
+		if let cert = _selectedCert() {
+			NavigationLink {
+				CertificatesView(selectedCert: $_temporaryCertificate)
+			} label: {
+				CertificatesCellView(
+					cert: cert,
+					shouldDisplayInfo: false
+				)
 			}
 		}
 	}
+}
 	
 	@ViewBuilder
 	private func _customizationProperties(for app: AppInfoPresentable) -> some View {
