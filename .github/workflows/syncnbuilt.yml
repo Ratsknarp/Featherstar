@@ -1,8 +1,8 @@
 name: Sync n' Built
 
 on:
-  #schedule:
-  #  - cron: "*/5 * * * *"
+  # schedule:
+  #   - cron: "*/5 * * * *"
   workflow_dispatch:
     inputs:
       version:
@@ -203,11 +203,13 @@ jobs:
           DATE="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
           VERSION="${{ github.event.release.tag_name || github.event.inputs.version || 'manual' }}"
 
-          echo '{
-            "name": "Feather v2 Alpha Test",
-            "identifier": "pidev.feather.testing",
-            "iconURL": "https://ratsknarp.github.io/featherstar/featheralpha.png",
-            "apps": [' > public/apps.json
+          cat <<EOF > public/apps.json
+{
+  "name": "Feather v2 Alpha Test",
+  "identifier": "pidev.feather.testing",
+  "iconURL": "https://ratsknarp.github.io/featherstar/featheralpha.png",
+  "apps": [
+EOF
 
           FIRST=true
           for IPA in public/*.ipa; do
