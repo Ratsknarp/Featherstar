@@ -1,8 +1,8 @@
 name: Sync n' Built
 
 on:
-  # schedule:
-  #   - cron: "*/5 * * * *"
+  #schedule:
+  #  - cron: "*/5 * * * *"
   workflow_dispatch:
     inputs:
       version:
@@ -112,7 +112,7 @@ jobs:
   build-feather-idevice:
     needs: sync-with-upstream
     if: github.event_name == 'workflow_dispatch' || needs.sync-with-upstream.outputs.changes-detected == 'true'
-    continue-on-error: true
+    continue-on-error: true 
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v3
@@ -178,23 +178,43 @@ jobs:
         run: |
           mkdir -p public
           VERSION="${{ github.event.release.tag_name || github.event.inputs.version || 'manual' }}"
+          
           RELEASE_METADATA=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
             "https://api.github.com/repos/${{ github.repository }}/releases/tags/${VERSION}" || \
             curl -s -H "Authorization: token $GITHUB_TOKEN" \
             "https://api.github.com/repos/${{ github.repository }}/releases/latest")
 
+          if [ -z "$RELEASE_METADATA" ]; then
+            echo "Error: Release metadata could not be fetched. Exiting."
+            exit 1
+          fi
+
           RELEASE_ID=$(echo "$RELEASE_METADATA" | jq -r '.id')
+          if [ -z "$RELEASE_ID" ]; then
+            echo "Error: Could not determine release ID. Exiting."
+            exit 1
+          fi
           echo "Using release ID: $RELEASE_ID"
 
           ASSETS=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
             "https://api.github.com/repos/${{ github.repository }}/releases/$RELEASE_ID/assets" | jq -c '.[] | select(.name | endswith(".ipa"))')
 
+          if [ -z "$ASSETS" ]; then
+            echo "No .ipa assets found for this release. Exiting."
+            exit 0
+          fi
+
           echo "$ASSETS" | while read -r asset; do
             NAME=$(echo "$asset" | jq -r '.name')
             DOWNLOAD_URL=$(echo "$asset" | jq -r '.url')
-            curl -L -H "Authorization: token $GITHUB_TOKEN" \
-                 -H "Accept: application/octet-stream" \
-                 "$DOWNLOAD_URL" -o "public/$NAME"
+            if [ -n "$NAME" ] && [ -n "$DOWNLOAD_URL" ]; then
+              echo "Downloading $NAME from $DOWNLOAD_URL..."
+              curl -L -H "Authorization: token $GITHUB_TOKEN" \
+                   -H "Accept: application/octet-stream" \
+                   "$DOWNLOAD_URL" -o "public/$NAME" || echo "Failed to download $NAME"
+            else
+              echo "Error: Missing fields (name or URL) in asset metadata."
+            fi
           done
 
       - name: Extract icons and generate metadata
