@@ -100,15 +100,11 @@ jobs:
         run: |
           mkdir -p build/Payload
           APP_PATH="build/${{ env.ARCHIVE_NAME }}.xcarchive/Products/Applications/Feather.app"
-          if [ ! -d "$APP_PATH" ]; then
-            echo "App not found at expected path: $APP_PATH"
-            exit 1
-          fi
           cp -R "$APP_PATH" build/Payload/
           cd build
           zip -r "${{ env.OUTPUT_NAME }}" Payload
 
-      - name: Upload IPA (Create or Update Release)
+      - name: Upload IPA
         uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ env.TAG }}
@@ -162,15 +158,11 @@ jobs:
         run: |
           mkdir -p build/Payload
           APP_PATH="build/${{ env.ARCHIVE_NAME }}.xcarchive/Products/Applications/Feather-idevice.app"
-          if [ ! -d "$APP_PATH" ]; then
-            echo "App not found at expected path: $APP_PATH"
-            exit 1
-          fi
           cp -R "$APP_PATH" build/Payload/
           cd build
           zip -r "${{ env.OUTPUT_NAME }}" Payload
 
-      - name: Upload IPA (Create or Update Release)
+      - name: Upload IPA
         uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ env.TAG }}
@@ -182,7 +174,7 @@ jobs:
   generate-altstore-repo:
     needs: [build-feather, build-feather-idevice]
     if: success() && (needs.build-feather.result == 'success' || needs.build-feather-idevice.result == 'success')
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -200,7 +192,6 @@ jobs:
           if echo "$RELEASE_METADATA" | jq -e '.id' > /dev/null 2>&1; then
             RELEASE_ID=$(echo "$RELEASE_METADATA" | jq -r '.id')
           else
-            echo "No release found for tag: $VERSION. Falling back to latest."
             RELEASE_METADATA=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
               "https://api.github.com/repos/${{ github.repository }}/releases/latest")
             RELEASE_ID=$(echo "$RELEASE_METADATA" | jq -r '.id')
@@ -219,44 +210,49 @@ jobs:
                  "$DOWNLOAD_URL" -o "public/$NAME"
           done
 
-      - name: Generate apps.json
+      - name: Extract metadata and icons from IPAs
         run: |
-          DATE="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
-          VERSION="${{ github.event.release.tag_name || github.event.inputs.version || 'manual' }}"
-          echo '{
-            "name": "Feather v2 Alpha Test",
-            "identifier": "pidev.feather.testing",
-            "iconURL": "https://ratsknarp.github.io/featherstar/featheralpha.png",
-            "apps": [' > public/apps.json
+          mkdir -p extracted
+          echo '{"name": "Feather v2 Alpha Test", "identifier": "pidev.feather.testing", "iconURL": "https://ratsknarp.github.io/featherstar/featherpurp.png", "apps": []}' > public/apps.json
+          for ipa in public/*.ipa; do
+            name=$(basename "$ipa" .ipa)
+            unzip -o "$ipa" -d "extracted/$name" > /dev/null
+            APP_PATH=$(find "extracted/$name/Payload" -type d -name "*.app" | head -n 1)
 
-          echo '{
-              "name": "Feather (idevice)",
-              "bundleIdentifier": "thewonderofyou.Feather-idevice",
-              "developerName": "Samara",
-              "version": "'"$VERSION"'",
-              "versionDate": "'"$DATE"'",
-              "downloadURL": "https://ratsknarp.github.io/featherstar/Feather-idevice.ipa",
-              "iconURL": "https://ratsknarp.github.io/featherstar/featherpurp.png",
-              "localizedDescription": "Test build of Feather with jkcoxsons idevice (REQUIRES PAIRING FILE AND LOOPBACK VPN).",
-              "subtitle": "Feather (idevice)",
-              "tintColor": "0033cc",
-              "size": 0
-            },' >> public/apps.json
+            BUNDLE_ID=$(/usr/libexec/PlistBuddy -c "Print CFBundleIdentifier" "$APP_PATH/Info.plist" 2>/dev/null || echo "unknown.bundle")
+            VERSION=$(/usr/libexec/PlistBuddy -c "Print CFBundleShortVersionString" "$APP_PATH/Info.plist" 2>/dev/null || echo "0.0")
+            DISPLAY_NAME=$(/usr/libexec/PlistBuddy -c "Print CFBundleDisplayName" "$APP_PATH/Info.plist" 2>/dev/null || echo "$name")
+            DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 
-          echo '{
-              "name": "Feather v2",
-              "bundleIdentifier": "thewonderofyou.Feather",
-              "developerName": "Samara",
-              "version": "'"$VERSION"'",
-              "versionDate": "'"$DATE"'",
-              "downloadURL": "https://ratsknarp.github.io/featherstar/Feather-v2.ipa",
-              "iconURL": "https://ratsknarp.github.io/featherstar/feather.png",
-              "localizedDescription": "Test build of more familiar version of Feather with vapor webserver.",
-              "subtitle": "Feather v2",
-              "tintColor": "0099ff",
-              "size": 0
-            }
-          ]}' >> public/apps.json
+            ICON_PATH=$(find "$APP_PATH" -iname "*AppIcon*.png" -o -iname "*icon*.png" | sort | tail -n 1)
+            if [ -f "$ICON_PATH" ]; then
+              cp "$ICON_PATH" "public/${name}.png"
+              ICON_URL="https://ratsknarp.github.io/featherstar/${name}.png"
+            else
+              cp public/featherpurp.png "public/${name}.png"
+              ICON_URL="https://ratsknarp.github.io/featherstar/${name}.png"
+            fi
+
+            jq --arg name "$DISPLAY_NAME" \
+               --arg id "$BUNDLE_ID" \
+               --arg version "$VERSION" \
+               --arg date "$DATE" \
+               --arg url "https://ratsknarp.github.io/featherstar/${name}.ipa" \
+               --arg icon "$ICON_URL" \
+               '.apps += [{
+                 name: $name,
+                 bundleIdentifier: $id,
+                 developerName: "Samara",
+                 version: $version,
+                 versionDate: $date,
+                 downloadURL: $url,
+                 iconURL: $icon,
+                 localizedDescription: "Test build of Feather.",
+                 subtitle: $name,
+                 tintColor: "0099ff",
+                 size: 0
+               }]' public/apps.json > tmp.json && mv tmp.json public/apps.json
+          done
 
       - name: Deploy to gh-pages
         uses: peaceiris/actions-gh-pages@v3
