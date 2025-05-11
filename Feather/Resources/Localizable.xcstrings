@@ -1011,6 +1011,7 @@
       }
     },
     "Expired" : {
+      "comment" : "Abgelaufen",
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
