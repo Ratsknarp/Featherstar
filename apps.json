@@ -1,32 +1,33 @@
 {
   "name": "Feather v2 Alpha Test",
   "identifier": "pidev.feather.testing",
-  "iconURL": "https://ratsknarp.github.io/featherstar/featheralpha.png",
+  "iconURL": "https://ratsknarp.github.io/featherstar/featherpurp.png",
   "apps": [
-{
-    "name": "Feather (idevice)",
-    "bundleIdentifier": "thewonderofyou.Feather-idevice",
-    "developerName": "Samara",
-    "version": "certorderchange",
-    "versionDate": "2025-05-11T17:17:56Z",
-    "downloadURL": "https://ratsknarp.github.io/featherstar/Feather-idevice.ipa",
-    "iconURL": "https://ratsknarp.github.io/featherstar/featherpurp.png",
-    "localizedDescription": "Test build of Feather with jkcoxsons idevice (REQUIRES PAIRING FILE AND LOOPBACK VPN).",
-    "subtitle": "Feather (idevice)",
-    "tintColor": "0033cc",
-    "size": 0
-  },
-{
-    "name": "Feather v2",
-    "bundleIdentifier": "thewonderofyou.Feather",
-    "developerName": "Samara",
-    "version": "certorderchange",
-    "versionDate": "2025-05-11T17:17:56Z",
-    "downloadURL": "https://ratsknarp.github.io/featherstar/Feather-v2.ipa",
-    "iconURL": "https://ratsknarp.github.io/featherstar/feather.png",
-    "localizedDescription": "Test build of more familiar version of Feather with vapor webserver.",
-    "subtitle": "Feather v2",
-    "tintColor": "0099ff",
-    "size": 0
-  }
-]}
+    {
+      "name": "Feather",
+      "bundleIdentifier": "thewonderofyou.Feather-idevice",
+      "developerName": "Samara",
+      "version": "2.0",
+      "versionDate": "2025-05-11T17:43:32Z",
+      "downloadURL": "https://ratsknarp.github.io/featherstar/Feather-idevice.ipa",
+      "iconURL": "https://ratsknarp.github.io/featherstar/Feather-idevice.png",
+      "localizedDescription": "Test build of Feather.",
+      "subtitle": "Feather",
+      "tintColor": "0099ff",
+      "size": 0
+    },
+    {
+      "name": "Feather",
+      "bundleIdentifier": "thewonderofyou.Feather",
+      "developerName": "Samara",
+      "version": "2.0",
+      "versionDate": "2025-05-11T17:43:32Z",
+      "downloadURL": "https://ratsknarp.github.io/featherstar/Feather-v2.ipa",
+      "iconURL": "https://ratsknarp.github.io/featherstar/Feather-v2.png",
+      "localizedDescription": "Test build of Feather.",
+      "subtitle": "Feather",
+      "tintColor": "0099ff",
+      "size": 0
+    }
+  ]
+}
