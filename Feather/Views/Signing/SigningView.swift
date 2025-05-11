@@ -174,7 +174,6 @@ extension SigningView {
 					CertificatesCellView(
 						cert: cert,
 						shouldDisplayInfo: false,
-						isSelectedInfoPresenting: .constant(.none)
 					)
 				}
 			}
