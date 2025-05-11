@@ -8,7 +8,7 @@ on:
       version:
         description: 'Enter the version manually (or fallback to latest if invalid)'
         required: true 
-        default: 'automagic'
+        default: 'iranit'
 
 jobs:
   sync-with-upstream:
@@ -192,7 +192,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           mkdir -p public
-          VERSION="${{ github.event.release.tag_name || github.event.inputs.version || 'manual' }}"
+          VERSION="${{ github.event.release.tag_name || github.event.inputs.version || 'automagic' }}"
 
           RELEASE_METADATA=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
             "https://api.github.com/repos/${{ github.repository }}/releases/tags/${VERSION}")
