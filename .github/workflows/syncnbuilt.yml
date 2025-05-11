@@ -47,31 +47,35 @@ jobs:
         run: |
           git fetch origin
           if [ "$(git rev-parse HEAD)" = "$(git rev-parse origin/main)" ]; then
-            echo "No new changes."
             echo "changes=false" >> "$GITHUB_OUTPUT"
           else
-            echo "New changes detected."
             git push origin main
             echo "changes=true" >> "$GITHUB_OUTPUT"
           fi
 
   build-feather:
-    name: Build Feather
     needs: sync-with-upstream
     if: github.event_name == 'workflow_dispatch' || needs.sync-with-upstream.outputs.changes-detected == 'true'
+    continue-on-error: true
     runs-on: macos-latest
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v3
         with:
           submodules: recursive
 
-      - name: Setup Xcode
-        uses: maxim-lobanov/setup-xcode@v1
+      - uses: maxim-lobanov/setup-xcode@v1
         with:
           xcode-version: 'latest'
 
-      - name: Build and Package IPA
+      - name: Set metadata
+        run: |
+          SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
+          echo "TAG=featherrelease-${SHORT_SHA}" >> "$GITHUB_ENV"
+          echo "RELEASE_NAME=Feather Rewrite Test Release $SHORT_SHA" >> "$GITHUB_ENV"
+          echo "ARCHIVE_NAME=Feather" >> "$GITHUB_ENV"
+          echo "OUTPUT_NAME=Feather-v2.ipa" >> "$GITHUB_ENV"
+
+      - name: Archive Build
         run: |
           xcodebuild clean archive \
             -project Feather.xcodeproj \
@@ -89,34 +93,45 @@ jobs:
             IPHONEOS_DEPLOYMENT_TARGET=17.4 \
             -skipPackagePluginValidation
 
+      - name: Create unsigned IPA
+        run: |
           mkdir -p build/Payload
-          cp -R build/Feather.xcarchive/Products/Applications/Feather.app build/Payload/
+          APP_PATH="build/Feather.xcarchive/Products/Applications/Feather.app"
+          cp -R "$APP_PATH" build/Payload/
           cd build
-          zip -r Feather-v2.ipa Payload
+          zip -r "Feather-v2.ipa" Payload
 
-      - name: Upload Feather IPA
-        uses: actions/upload-artifact@v3
+      - uses: softprops/action-gh-release@v1
         with:
-          name: Feather-v2
-          path: build/Feather-v2.ipa
+          tag_name: ${{ env.TAG }}
+          name: ${{ env.RELEASE_NAME }}
+          files: build/Feather-v2.ipa
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   build-feather-idevice:
-    name: Build Feather-idevice
     needs: sync-with-upstream
     if: github.event_name == 'workflow_dispatch' || needs.sync-with-upstream.outputs.changes-detected == 'true'
+    continue-on-error: true
     runs-on: macos-latest
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v3
         with:
           submodules: recursive
 
-      - name: Setup Xcode
-        uses: maxim-lobanov/setup-xcode@v1
+      - uses: maxim-lobanov/setup-xcode@v1
         with:
           xcode-version: 'latest'
 
-      - name: Build and Package IPA
+      - name: Set metadata
+        run: |
+          SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
+          echo "TAG=featherrelease-${SHORT_SHA}" >> "$GITHUB_ENV"
+          echo "RELEASE_NAME=Feather Rewrite Test Release $SHORT_SHA" >> "$GITHUB_ENV"
+          echo "ARCHIVE_NAME=Featheridevice" >> "$GITHUB_ENV"
+          echo "OUTPUT_NAME=Feather-idevice.ipa" >> "$GITHUB_ENV"
+
+      - name: Archive Build
         run: |
           xcodebuild clean archive \
             -project Feather.xcodeproj \
@@ -134,37 +149,55 @@ jobs:
             IPHONEOS_DEPLOYMENT_TARGET=17.4 \
             -skipPackagePluginValidation
 
+      - name: Create unsigned IPA
+        run: |
           mkdir -p build/Payload
-          cp -R build/Featheridevice.xcarchive/Products/Applications/Feather-idevice.app build/Payload/
+          APP_PATH="build/Featheridevice.xcarchive/Products/Applications/Feather-idevice.app"
+          cp -R "$APP_PATH" build/Payload/
           cd build
-          zip -r Feather-idevice.ipa Payload
+          zip -r "Feather-idevice.ipa" Payload
 
-      - name: Upload Feather-idevice IPA
-        uses: actions/upload-artifact@v3
+      - uses: softprops/action-gh-release@v1
         with:
-          name: Feather-idevice
-          path: build/Feather-idevice.ipa
+          tag_name: ${{ env.TAG }}
+          name: ${{ env.RELEASE_NAME }}
+          files: build/Feather-idevice.ipa
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   generate-altstore-repo:
-    name: Generate AltStore Repo
     needs: [build-feather, build-feather-idevice]
     if: always()
     runs-on: macos-latest
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v3
 
-      - name: Download Artifacts
-        uses: actions/download-artifact@v3
-        with:
-          path: public
-
-      - name: Install dependencies
+      - name: Fetch release assets
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          brew install imagemagick
-          brew install pngcheck
+          mkdir -p public
+          VERSION="${{ github.event.release.tag_name || github.event.inputs.version || 'manual' }}"
+          RELEASE_METADATA=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
+            "https://api.github.com/repos/${{ github.repository }}/releases/tags/${VERSION}" || \
+            curl -s -H "Authorization: token $GITHUB_TOKEN" \
+            "https://api.github.com/repos/${{ github.repository }}/releases/latest")
 
-      - name: Extract icons and metadata
+          RELEASE_ID=$(echo "$RELEASE_METADATA" | jq -r '.id')
+          echo "Using release ID: $RELEASE_ID"
+
+          ASSETS=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
+            "https://api.github.com/repos/${{ github.repository }}/releases/$RELEASE_ID/assets" | jq -c '.[] | select(.name | endswith(".ipa"))')
+
+          echo "$ASSETS" | while read -r asset; do
+            NAME=$(echo "$asset" | jq -r '.name')
+            DOWNLOAD_URL=$(echo "$asset" | jq -r '.url')
+            curl -L -H "Authorization: token $GITHUB_TOKEN" \
+                 -H "Accept: application/octet-stream" \
+                 "$DOWNLOAD_URL" -o "public/$NAME"
+          done
+
+      - name: Extract icons and generate metadata
         run: |
           mkdir -p public/icons
           DATE="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
@@ -177,30 +210,28 @@ jobs:
             "apps": [' > public/apps.json
 
           FIRST=true
-
-          for IPA in public/**/**/*.ipa; do
-            echo "Processing $IPA"
+          for IPA in public/*.ipa; do
             TMP_DIR=$(mktemp -d)
             unzip -q "$IPA" -d "$TMP_DIR"
-
             APP_DIR=$(find "$TMP_DIR/Payload" -name "*.app" | head -n 1)
             PLIST="$APP_DIR/Info.plist"
 
-            NAME=$(/usr/libexec/PlistBuddy -c "Print :CFBundleDisplayName" "$PLIST" 2>/dev/null || \
-                  /usr/libexec/PlistBuddy -c "Print :CFBundleName" "$PLIST")
+            NAME=$(/usr/libexec/PlistBuddy -c "Print :CFBundleDisplayName" "$PLIST" 2>/dev/null || /usr/libexec/PlistBuddy -c "Print :CFBundleName" "$PLIST")
             BUNDLE_ID=$(/usr/libexec/PlistBuddy -c "Print :CFBundleIdentifier" "$PLIST")
             VERSION_NUM=$(/usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" "$PLIST")
             BUILD_NUM=$(/usr/libexec/PlistBuddy -c "Print :CFBundleVersion" "$PLIST")
 
-            ICON_FILE=$(defaults read "$APP_DIR/Info" CFBundleIcons | grep -A1 PrimaryIcon | grep CFBundleIconFiles | tail -n1 | cut -d'"' -f2 | sed 's/,$//')
-            ICON_PATH=$(find "$APP_DIR" -name "${ICON_FILE}*.png" | sort | head -n1)
-
+            ICON_PATH=$(find "$APP_DIR" -name "*AppIcon*.png" | sort | tail -n1)
             OUTPUT_ICON="icons/${BUNDLE_ID//./_}.png"
-            cp "$ICON_PATH" "public/$OUTPUT_ICON" || true
+            if [ -f "$ICON_PATH" ]; then
+              cp "$ICON_PATH" "public/$OUTPUT_ICON"
+            else
+              OUTPUT_ICON="feather.png"
+            fi
 
             IPA_NAME=$(basename "$IPA")
 
-            [ "$FIRST" = false ] && echo "," >> public/apps.json || FIRST=false
+            if [ "$FIRST" = true ]; then FIRST=false; else echo "," >> public/apps.json; fi
 
             cat <<EOF >> public/apps.json
 {
@@ -217,6 +248,7 @@ jobs:
   "size": 0
 }
 EOF
+
             rm -rf "$TMP_DIR"
           done
 
