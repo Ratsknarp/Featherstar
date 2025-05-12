@@ -1,14 +1,14 @@
 name: Sync n' Build
 
-on:
-  schedule:
-    - cron: "*/10 * * * *"
-  workflow_dispatch:
-    inputs:
-      version:
-        description: 'Enter the version manually (or fallback to latest if invalid)'
-        required: true 
-        default: 'i-ran-it'
+#on:
+  #schedule:
+    #- cron: "*/10 * * * *"
+  #workflow_dispatch:
+    #inputs:
+      #version:
+        #description: 'Enter the version manually (or fallback to latest if invalid)'
+        #required: true 
+        #default: 'i-ran-it'
 
 jobs:
   sync-with-upstream:
