@@ -241,7 +241,7 @@ jobs:
                  "$DOWNLOAD_URL" -o "public/$NAME"
           done
 
-       - name: Generate starsign.json
+      - name: Generate starsign.json
         run: |
           DATE="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
           VERSION="${{ github.event.release.tag_name || github.event.inputs.version || 'build-on-commit' }}"
