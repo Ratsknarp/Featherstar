@@ -8,7 +8,7 @@ on:
       version:
         description: 'Enter the version manually (or fallback to latest if invalid)'
         required: true 
-        default: 'iranit'
+        default: 'i-ran-it'
 
 jobs:
   sync-with-upstream:
@@ -222,7 +222,7 @@ jobs:
       - name: Generate apps.json
         run: |
           DATE="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
-          VERSION="${{ github.event.release.tag_name || github.event.inputs.version || 'manual' }}"
+          VERSION="${{ github.event.release.tag_name || github.event.inputs.version || 'build-on-commit' }}"
           echo '{
             "name": "Feather v2 Alpha Test",
             "identifier": "pidev.feather.testing",
