@@ -2,7 +2,7 @@ name: Sync n' Build
 
 on:
   schedule:
-    - cron: '0 * * * *'
+    - cron: '0 * * * *' 
   workflow_dispatch:
     inputs:
       version:
@@ -237,7 +237,7 @@ jobs:
                  "$DOWNLOAD_URL" -o "public/$NAME"
           done
 
-      - name: Generate apps.json
+      - name: Generate starsign.json
         run: |
           DATE="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
           VERSION="${{ github.event.release.tag_name || github.event.inputs.version || 'build-on-commit' }}"
@@ -245,7 +245,7 @@ jobs:
             "name": "Featherstar",
             "identifier": "pidev.feather.testing",
             "iconURL": "https://ratsknarp.github.io/featherstar/featherpurp.png",
-            "apps": [' > public/apps.json
+            "apps": [' > public/starsign.json
 
           echo '{
               "name": "Feather (idevice)",
@@ -259,7 +259,7 @@ jobs:
               "subtitle": "Feather (idevice)",
               "tintColor": "0033cc",
               "size": 0
-            },' >> public/apps.json
+            },' >> public/starsign.json
 
           echo '{
               "name": "Feather v2",
@@ -274,7 +274,7 @@ jobs:
               "tintColor": "0099ff",
               "size": 0
             }
-          ]}' >> public/apps.json
+          ]}' >> public/starsign.json
 
       - name: Deploy to gh-pages
         uses: peaceiris/actions-gh-pages@v3
