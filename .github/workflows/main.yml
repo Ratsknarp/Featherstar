@@ -2,7 +2,7 @@ name: Sync n' Build
 
 on:
   schedule:
-    - cron: '0 * * * *' 
+    - cron: '0 * * * *'
   workflow_dispatch:
     inputs:
       version:
@@ -68,10 +68,10 @@ jobs:
       - name: Cache DerivedData
         uses: actions/cache@v4
         with:
-          path: ~/Library/Developer/Xcode/DerivedData
-          key: xcode-deriveddata-feather-${{ runner.os }}-${{ github.sha }}
+          path: build/DerivedData
+          key: ${{ runner.os }}-feather-derived-${{ hashFiles('Feather.xcodeproj/project.pbxproj') }}
           restore-keys: |
-            xcode-deriveddata-feather-${{ runner.os }}-
+            ${{ runner.os }}-feather-derived-
 
       - name: Setup Xcode
         uses: maxim-lobanov/setup-xcode@v1
@@ -95,6 +95,7 @@ jobs:
             -archivePath build/${{ env.ARCHIVE_NAME }}.xcarchive \
             -sdk iphoneos \
             -destination 'generic/platform=iOS' \
+            -derivedDataPath build/DerivedData \
             ONLY_ACTIVE_ARCH=YES \
             ARCHS=arm64 \
             CODE_SIGN_IDENTITY="" \
@@ -139,10 +140,10 @@ jobs:
       - name: Cache DerivedData
         uses: actions/cache@v4
         with:
-          path: ~/Library/Developer/Xcode/DerivedData
-          key: xcode-deriveddata-idevice-${{ runner.os }}-${{ github.sha }}
+          path: build/DerivedData
+          key: ${{ runner.os }}-idevice-derived-${{ hashFiles('Feather.xcodeproj/project.pbxproj') }}
           restore-keys: |
-            xcode-deriveddata-idevice-${{ runner.os }}-
+            ${{ runner.os }}-idevice-derived-
 
       - name: Setup Xcode
         uses: maxim-lobanov/setup-xcode@v1
@@ -166,6 +167,7 @@ jobs:
             -archivePath build/${{ env.ARCHIVE_NAME }}.xcarchive \
             -sdk iphoneos \
             -destination 'generic/platform=iOS' \
+            -derivedDataPath build/DerivedData \
             ONLY_ACTIVE_ARCH=YES \
             ARCHS=arm64 \
             CODE_SIGN_IDENTITY="" \
