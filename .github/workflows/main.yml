@@ -2,7 +2,7 @@ name: Sync n' Build
 
 on:
   schedule:
-    - cron: '0 * * * *'
+    - cron: "0 * * * *"
   workflow_dispatch:
     inputs:
       version:
@@ -58,22 +58,12 @@ jobs:
   build-feather:
     needs: sync-with-upstream
     if: github.event_name == 'workflow_dispatch' || needs.sync-with-upstream.outputs.changes-detected == 'true'
-    runs-on: macos-14
+    runs-on: macos-latest
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
         with:
           submodules: recursive
-          fetch-depth: 1
-          shallow-submodules: true 
-
-      - name: Cache DerivedData
-        uses: actions/cache@v4
-        with:
-          path: ~/Library/Developer/Xcode/DerivedData
-          key: xcode-deriveddata-feather-${{ runner.os }}-${{ github.sha }}
-          restore-keys: |
-            xcode-deriveddata-feather-${{ runner.os }}-
 
       - name: Setup Xcode
         uses: maxim-lobanov/setup-xcode@v1
@@ -99,7 +89,6 @@ jobs:
             -destination 'generic/platform=iOS' \
             ONLY_ACTIVE_ARCH=YES \
             ARCHS=arm64 \
-            CODE_SIGN_IDENTITY="" \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGNING_ALLOWED=NO \
             SWIFT_OPTIMIZATION_LEVEL="-Owholemodule" \
@@ -131,22 +120,12 @@ jobs:
   build-feather-idevice:
     needs: sync-with-upstream
     if: github.event_name == 'workflow_dispatch' || needs.sync-with-upstream.outputs.changes-detected == 'true'
-    runs-on: macos-14
+    runs-on: macos-latest
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
         with:
           submodules: recursive
-          fetch-depth: 1
-          shallow-submodules: true 
-
-      - name: Cache DerivedData
-        uses: actions/cache@v4
-        with:
-          path: ~/Library/Developer/Xcode/DerivedData
-          key: xcode-deriveddata-idevice-${{ runner.os }}-${{ github.sha }}
-          restore-keys: |
-            xcode-deriveddata-idevice-${{ runner.os }}-
 
       - name: Setup Xcode
         uses: maxim-lobanov/setup-xcode@v1
@@ -172,7 +151,6 @@ jobs:
             -destination 'generic/platform=iOS' \
             ONLY_ACTIVE_ARCH=YES \
             ARCHS=arm64 \
-            CODE_SIGN_IDENTITY="" \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGNING_ALLOWED=NO \
             SWIFT_OPTIMIZATION_LEVEL="-Owholemodule" \
@@ -214,7 +192,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           mkdir -p public
-          VERSION="${{ github.event.release.tag_name || github.event.inputs.version || 'automagic' }}"
+          VERSION="${{ github.event.release.tag_name || github.event.inputs.version || 'build-on-commit' }}"
 
           RELEASE_METADATA=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
             "https://api.github.com/repos/${{ github.repository }}/releases/tags/${VERSION}")
@@ -247,19 +225,19 @@ jobs:
           VERSION="${{ github.event.release.tag_name || github.event.inputs.version || 'build-on-commit' }}"
           echo '{
             "name": "Featherstar",
-            "identifier": "pidev.feather.testing",
+            "identifier": "pidev.featherstar",
             "iconURL": "https://ratsknarp.github.io/featherstar/featherpurp.png",
             "apps": [' > public/starsign.json
 
           echo '{
-              "name": "Feather (idevice)",
+              "name": "iFeather",
               "bundleIdentifier": "thewonderofyou.Feather-idevice",
               "developerName": "Samara",
               "version": "'"$VERSION"'",
               "versionDate": "'"$DATE"'",
               "downloadURL": "https://ratsknarp.github.io/featherstar/Feather-idevice.ipa",
               "iconURL": "https://ratsknarp.github.io/featherstar/featherpurp.png",
-              "localizedDescription": "Test build of Feather with jkcoxsons idevice (REQUIRES PAIRING FILE AND LOOPBACK VPN).",
+              "localizedDescription": "Feather with idevice.",
               "subtitle": "Feather (idevice)",
               "tintColor": "0033cc",
               "size": 0
@@ -273,8 +251,8 @@ jobs:
               "versionDate": "'"$DATE"'",
               "downloadURL": "https://ratsknarp.github.io/featherstar/Feather-v2.ipa",
               "iconURL": "https://ratsknarp.github.io/featherstar/featherpurp.png",
-              "localizedDescription": "Test build of more familiar version of Feather with vapor webserver.",
-              "subtitle": "Feather v2",
+              "localizedDescription": "Feather with vapor webserver.",
+              "subtitle": "Feather (vapor2)",
               "tintColor": "0099ff",
               "size": 0
             }
@@ -293,6 +271,6 @@ jobs:
           curl -H "Content-Type: application/json" \
                -X POST \
                -d '{
-                 "content": "Feather update available.!\nTag: ${{ env.TAG }}\nRelease: ${{ env.RELEASE_NAME }}\nhttps://github.com/${{ github.repository }}/releases"
+                 "content": "Feather update detected.\nTag: ${{ env.TAG }}\nRelease: ${{ env.RELEASE_NAME }}\nhttps://github.com/${{ github.repository }}/releases"
                }' \
                ${{ secrets.DISCORD_WEBHOOK_URL }}
