@@ -53,6 +53,7 @@ jobs:
             echo "New changes detected."
             git push origin main
             echo "changes=true" >> "$GITHUB_OUTPUT"
+          fi
 
   build-feather-idevice:
     needs: sync-with-upstream
@@ -64,13 +65,6 @@ jobs:
         with:
           submodules: recursive
           fetch-depth: 1
-
-      - name: Cache Xcode DerivedData
-        uses: actions/cache@v4
-        with:
-          path: ~/Library/Developer/Xcode/DerivedData
-          key: xcode-deriveddata-${{ runner.os }}-${{ github.sha }}
-          restore-keys: xcode-deriveddata-${{ runner.os }}-
 
       - name: Setup Xcode
         uses: maxim-lobanov/setup-xcode@v1
