@@ -264,3 +264,13 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./public
           publish_branch: gh-pages
+
+      - name: Send Discord notification
+        if: success()
+        run: |
+          curl -H "Content-Type: application/json" \
+               -X POST \
+               -d '{
+                 "content": "🚀 New Feather build uploaded!\nTag: ${{ env.TAG }}\nRelease: ${{ env.RELEASE_NAME }}\nhttps://github.com/${{ github.repository }}/releases"
+               }' \
+               ${{ secrets.DISCORD_WEBHOOK_URL }}
