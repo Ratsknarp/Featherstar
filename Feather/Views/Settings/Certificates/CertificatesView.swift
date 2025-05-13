@@ -18,7 +18,7 @@ struct CertificatesView: View {
 	// MARK: Fetch
 	@FetchRequest(
 		entity: CertificatePair.entity(),
-		sortDescriptors: [NSSortDescriptor(keyPath: \CertificatePair.date, ascending: true)],
+		sortDescriptors: [NSSortDescriptor(keyPath: \CertificatePair.date, ascending: false)],
 		animation: .snappy
 	) private var certificates: FetchedResults<CertificatePair>
 	
