@@ -164,15 +164,6 @@ jobs:
             echo "App not found at expected path: $APP_PATH"
             exit 1
           fi
-
-          # Change app display name to "iFeather"
-          PLIST="$APP_PATH/Info.plist"
-          if /usr/libexec/PlistBuddy -c "Print :CFBundleDisplayName" "$PLIST" >/dev/null 2>&1; then
-            /usr/libexec/PlistBuddy -c "Set :CFBundleDisplayName iFeather" "$PLIST"
-          else
-            /usr/libexec/PlistBuddy -c "Add :CFBundleDisplayName string iFeather" "$PLIST"
-          fi
-
           cp -R "$APP_PATH" build/Payload/
           cd build
           zip -r "${{ env.OUTPUT_NAME }}" Payload
@@ -297,15 +288,6 @@ jobs:
             echo "App not found at expected path: $APP_PATH"
             exit 1
           fi
-
-          # Change app display name to "iFeather"
-          PLIST="$APP_PATH/Info.plist"
-          if /usr/libexec/PlistBuddy -c "Print :CFBundleDisplayName" "$PLIST" >/dev/null 2>&1; then
-            /usr/libexec/PlistBuddy -c "Set :CFBundleDisplayName iFeather" "$PLIST"
-          else
-            /usr/libexec/PlistBuddy -c "Add :CFBundleDisplayName string iFeather" "$PLIST"
-          fi
-
           cp -R "$APP_PATH" build/Payload/
           cd build
           zip -r "${{ env.OUTPUT_NAME }}" Payload
