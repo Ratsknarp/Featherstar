@@ -1,17 +1,17 @@
 {
-  "name": "Feather Automagic Builds",
+  "name": "Feather Automagic Repo",
   "identifier": "pidev.feather",
   "iconURL": "https://ratsknarp.github.io/featherstar/featherpurp.png",
   "apps": [
 {
-    "name": "iFeather",
+    "name": "Feather (idevice)",
     "bundleIdentifier": "thewonderofyou.Feather-idevice",
     "developerName": "Samara",
-    "version": "build-on-commit",
-    "versionDate": "2025-05-13T07:19:13Z",
+    "version": "test-run-1",
+    "versionDate": "2025-05-13T20:43:02Z",
     "downloadURL": "https://ratsknarp.github.io/featherstar/Feather-idevice.ipa",
     "iconURL": "https://ratsknarp.github.io/featherstar/featherpurp.png",
-    "localizedDescription": "Feather with idevice.",
+    "localizedDescription": "Automagic build of Feather with jkcoxsons idevice (REQUIRES PAIRING FILE AND LOOPBACK VPN).",
     "subtitle": "Feather (idevice)",
     "tintColor": "0033cc",
     "size": 0
@@ -20,12 +20,12 @@
     "name": "Feather v2",
     "bundleIdentifier": "thewonderofyou.Feather",
     "developerName": "Samara",
-    "version": "build-on-commit",
-    "versionDate": "2025-05-13T07:19:13Z",
+    "version": "test-run-1",
+    "versionDate": "2025-05-13T20:43:02Z",
     "downloadURL": "https://ratsknarp.github.io/featherstar/Feather-v2.ipa",
     "iconURL": "https://ratsknarp.github.io/featherstar/featherpurp.png",
-    "localizedDescription": "Feather with vapor webserver.",
-    "subtitle": "Feather (vapor2)",
+    "localizedDescription": "Automagic build of more familiar version of Feather with vapor webserver.",
+    "subtitle": "Feather v2",
     "tintColor": "0099ff",
     "size": 0
   }
