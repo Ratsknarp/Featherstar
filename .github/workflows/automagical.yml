@@ -130,7 +130,7 @@ jobs:
 
   generate-altstore-repo:
     needs: [build-feather]
-    if: success() && (needs.build-feather.result == 'success' || needs.build-feather-idevice.result == 'success')
+    if: success() && (needs.build-feather.result == 'success' 
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
