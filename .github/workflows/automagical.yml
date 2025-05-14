@@ -57,8 +57,7 @@ jobs:
 
   build-feather:
     needs: sync-with-upstream
-    if: |
-      github.event_name == 'workflow_dispatch' || needs.sync-with-upstream.outputs.changes-detected == 'true'
+    if: github.event_name == 'workflow_dispatch' || needs.sync-with-upstream.outputs.changes-detected == 'true'
     runs-on: macos-latest
     strategy:
       matrix:
@@ -129,8 +128,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   generate-altstore-repo:
-    needs: [build-feather]
-    if: success() && (needs.build-feather.result == 'success' 
+    needs: build-feather
+    if: needs.build-feather.result == 'success'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -141,7 +140,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           mkdir -p public
-          VERSION="${{ github.event.release.tag_name || github.event.inputs.version || 'automagic' }}"
+          VERSION="${{ github.event.inputs.version || github.ref_name || 'automagic' }}"
 
           RELEASE_METADATA=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
             "https://api.github.com/repos/${{ github.repository }}/releases/tags/${VERSION}")
@@ -171,7 +170,7 @@ jobs:
       - name: Generate apps.json
         run: |
           DATE="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
-          VERSION="${{ github.event.release.tag_name || github.event.inputs.version || 'automagic' }}"
+          VERSION="${{ github.event.inputs.version || 'automagic' }}"
           echo '{
             "name": "Feather Automagic Repo",
             "identifier": "pidev.feather",
