@@ -129,7 +129,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   generate-altstore-repo:
-    needs: [build-feather, build-feather-idevice]
+    needs: [build-feather]
     if: success() && (needs.build-feather.result == 'success' || needs.build-feather-idevice.result == 'success')
     runs-on: ubuntu-latest
     steps:
