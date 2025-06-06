@@ -55,8 +55,10 @@ extension Storage {
 			p12Password: cert.password ?? ""
 		) { (status, _, _) in
 			if status == 1 {
-				cert.revoked = true
-				Storage.shared.saveContext()
+				DispatchQueue.main.async {
+					cert.revoked = true
+					Storage.shared.saveContext()
+				}
 			}
 		}
 	}
